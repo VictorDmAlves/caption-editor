@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Caption Editor</title>
+  <style>
+    :root {
+      --topbar-h: 54px;
+      --status-h: 32px;
+      --bg: #101214;
+      --panel: #16191d;
+      --panel-2: #1d2126;
+      --border: #2c3239;
+      --text: #eef2f6;
+      --muted: #98a2ad;
+      --accent: #4d8dff;
+      --accent-hover: #6ca1ff;
+      --danger: #ff6b6b;
+      --ok: #52c77a;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 13px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: .15s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background: #252b32;
+      border-color: #3a434d;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    button.primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    button:disabled {
+      opacity: .42;
+      cursor: not-allowed;
+    }
+
+    .topbar {
+      height: var(--topbar-h);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      background: rgba(18, 21, 25, .97);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+    }
+
+    .topbar .spacer { flex: 1; }
+
+    .folder-name {
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 36vw;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .statusbar {
+      height: var(--status-h);
+      position: fixed;
+      top: var(--topbar-h);
+      left: 0;
+      right: 0;
+      z-index: 9;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      background: rgba(18, 21, 25, .76);
+      border-bottom: 1px solid rgba(44, 50, 57, .75);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .statusbar strong { color: #dfe5ec; font-weight: 600; }
+
+    .save-state {
+      margin-left: auto;
+      font-weight: 600;
+    }
+
+    .save-state.unsaved { color: #f0ba61; }
+    .save-state.saved { color: var(--ok); }
+    .save-state.error { color: var(--danger); }
+
+    .workspace {
+      position: fixed;
+      top: calc(var(--topbar-h) + var(--status-h));
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 0;
+    }
+
+    .panel {
+      min-width: 0;
+      min-height: 0;
+      background: var(--panel);
+    }
+
+    .image-panel {
+      border-right: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 22px;
+    }
+
+    .image-stage {
+      width: min(100%, calc(100vh - var(--topbar-h) - var(--status-h) - 44px));
+      aspect-ratio: 1 / 1;
+      max-width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0c0e10;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0,0,0,.24);
+    }
+
+    .image-stage img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      image-rendering: auto;
+      display: block;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 30px;
+      line-height: 1.55;
+      max-width: 420px;
+    }
+
+    .text-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #13161a;
+    }
+
+    .filename {
+      padding: 12px 14px 8px;
+      color: var(--muted);
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    textarea {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      resize: none;
+      border: 0;
+      outline: none;
+      padding: 20px;
+      background: #13161a;
+      color: var(--text);
+      font: 16px/1.6 Consolas, "Cascadia Code", "Courier New", monospace;
+      tab-size: 4;
+    }
+
+    textarea::placeholder { color: #66707b; }
+
+    @media (max-width: 800px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      .image-panel {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .folder-name { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <button id="openFolderBtn" class="primary">Open files</button>
+    <button id="prevBtn" disabled>Previous</button>
+    <button id="nextBtn" disabled>Next</button>
+    <button id="saveBtn" disabled>Save</button>
+    <button id="languageBtn" title="Switch to Portuguese (BR)" aria-label="Switch language">EN</button>
+    <div class="spacer"></div>
+    <div id="folderName" class="folder-name">No folder opened</div>
+  </header>
+
+  <div class="statusbar">
+    <span><span id="imagesLabel">Images</span>: <strong id="totalCount">0</strong></span>
+    <span><span id="positionLabel">Position</span>: <strong id="positionCount">0 / 0</strong></span>
+    <span id="pairInfo">No file loaded</span>
+    <span id="saveState" class="save-state">—</span>
+  </div>
+
+  <main class="workspace">
+    <section class="panel image-panel">
+      <div class="image-stage">
+        <img id="previewImage" alt="Current image" hidden />
+        <div id="imageEmpty" class="empty">
+          Click <strong>Open files</strong> and select the folder containing the images and their corresponding TXT files.
+        </div>
+      </div>
+    </section>
+
+    <section class="panel text-panel">
+      <div id="currentFileName" class="filename">No TXT opened</div>
+      <textarea id="captionText" placeholder="The text corresponding to the image will appear here..." disabled></textarea>
+    </section>
+  </main>
+
+  <script>
+    const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "bmp", "gif", "avif"];
+
+    const state = {
+      directoryHandle: null,
+      items: [],
+      currentIndex: -1,
+      currentTextHandle: null,
+      imageObjectUrl: null,
+      dirty: false,
+      language: "en"
+    };
+
+    const translations = {
+      en: {
+        pageTitle: "Image Caption Editor",
+        openFiles: "Open files",
+        previous: "Previous",
+        next: "Next",
+        save: "Save",
+        images: "Images",
+        position: "Position",
+        noFolder: "No folder opened",
+        noFileLoaded: "No file loaded",
+        currentImageAlt: "Current image",
+        emptyMessage: "Click <strong>Open files</strong> and select the folder containing the images and their corresponding TXT files.",
+        noTxtOpen: "No TXT opened",
+        placeholder: "The text corresponding to the image will appear here...",
+        browserUnsupported: "Your browser does not support direct folder access. Use an up-to-date version of Google Chrome or Microsoft Edge.",
+        permissionRequired: "Read and write permission is required to open and save TXT files.",
+        openFolderError: "The folder could not be opened. Check the browser console for more details.",
+        noCompatibleImages: "No compatible images were found in this folder.",
+        unsavedConfirm: "The current text has unsaved changes. Continue without saving?",
+        willCreateOnSave: "will be created when saved",
+        pairFound: "Image + TXT found",
+        imageOnly: "Image found; TXT does not exist yet",
+        loaded: "Loaded",
+        newTxt: "New TXT",
+        noSavePermission: "No permission to save",
+        saved: "Saved",
+        saveError: "Save error",
+        saveErrorAlert: "The TXT file could not be saved. Check the browser console for more details.",
+        unsaved: "Unsaved changes",
+        languageButton: "EN",
+        languageTitle: "Switch to Portuguese (BR)"
+      },
+      br: {
+        pageTitle: "Editor de Caption de Imagens",
+        openFiles: "Abrir arquivos",
+        previous: "Anterior",
+        next: "Próximo",
+        save: "Salvar",
+        images: "Imagens",
+        position: "Posição",
+        noFolder: "Nenhuma pasta aberta",
+        noFileLoaded: "Nenhum arquivo carregado",
+        currentImageAlt: "Imagem atual",
+        emptyMessage: "Clique em <strong>Abrir arquivos</strong> e selecione a pasta contendo as imagens e os arquivos TXT correspondentes.",
+        noTxtOpen: "Nenhum TXT aberto",
+        placeholder: "O texto correspondente à imagem aparecerá aqui...",
+        browserUnsupported: "Seu navegador não suporta acesso direto a pastas. Use Google Chrome ou Microsoft Edge atualizado.",
+        permissionRequired: "É necessário permitir leitura e gravação na pasta para abrir e salvar os TXT.",
+        openFolderError: "Não foi possível abrir a pasta. Veja o console do navegador para mais detalhes.",
+        noCompatibleImages: "Nenhuma imagem compatível foi encontrada nessa pasta.",
+        unsavedConfirm: "O texto atual possui alterações não salvas. Deseja continuar sem salvar?",
+        willCreateOnSave: "será criado ao salvar",
+        pairFound: "Imagem + TXT encontrados",
+        imageOnly: "Imagem encontrada; TXT ainda não existe",
+        loaded: "Carregado",
+        newTxt: "Novo TXT",
+        noSavePermission: "Sem permissão para salvar",
+        saved: "Salvo",
+        saveError: "Erro ao salvar",
+        saveErrorAlert: "Não foi possível salvar o TXT. Veja o console do navegador para mais detalhes.",
+        unsaved: "Alterações não salvas",
+        languageButton: "BR",
+        languageTitle: "Switch to English"
+      }
+    };
+
+    function t(key) {
+      return translations[state.language][key];
+    }
+
+    const el = {
+      openFolderBtn: document.getElementById("openFolderBtn"),
+      prevBtn: document.getElementById("prevBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      saveBtn: document.getElementById("saveBtn"),
+      languageBtn: document.getElementById("languageBtn"),
+      folderName: document.getElementById("folderName"),
+      imagesLabel: document.getElementById("imagesLabel"),
+      positionLabel: document.getElementById("positionLabel"),
+      totalCount: document.getElementById("totalCount"),
+      positionCount: document.getElementById("positionCount"),
+      pairInfo: document.getElementById("pairInfo"),
+      saveState: document.getElementById("saveState"),
+      previewImage: document.getElementById("previewImage"),
+      imageEmpty: document.getElementById("imageEmpty"),
+      currentFileName: document.getElementById("currentFileName"),
+      captionText: document.getElementById("captionText")
+    };
+
+    function refreshLanguage() {
+      document.documentElement.lang = state.language === "en" ? "en" : "pt-BR";
+      document.title = t("pageTitle");
+      el.openFolderBtn.textContent = t("openFiles");
+      el.prevBtn.textContent = t("previous");
+      el.nextBtn.textContent = t("next");
+      el.saveBtn.textContent = t("save");
+      el.languageBtn.textContent = t("languageButton");
+      el.languageBtn.title = t("languageTitle");
+      el.imagesLabel.textContent = t("images");
+      el.positionLabel.textContent = t("position");
+      el.previewImage.alt = t("currentImageAlt");
+      el.captionText.placeholder = t("placeholder");
+
+      if (!state.directoryHandle) {
+        el.folderName.textContent = t("noFolder");
+      }
+
+      if (state.currentIndex < 0) {
+        el.currentFileName.textContent = t("noTxtOpen");
+        el.pairInfo.textContent = t("noFileLoaded");
+        if (!state.items.length) el.imageEmpty.innerHTML = t("emptyMessage");
+        setSaveState();
+        return;
+      }
+
+      const item = state.items[state.currentIndex];
+      const txtExists = Boolean(item.textHandle);
+      el.currentFileName.textContent = txtExists
+        ? `${item.imageName}  ↔  ${item.textName}`
+        : `${item.imageName}  ↔  ${item.textName} (${t("willCreateOnSave")})`;
+      el.pairInfo.textContent = txtExists ? t("pairFound") : t("imageOnly");
+
+      if (state.dirty) {
+        setSaveState(t("unsaved"), "unsaved");
+      } else {
+        setSaveState(txtExists ? t("loaded") : t("newTxt"), txtExists ? "" : "unsaved");
+      }
+    }
+
+    function toggleLanguage() {
+      state.language = state.language === "en" ? "br" : "en";
+      refreshLanguage();
+    }
+
+    function setSaveState(message = "", type = "") {
+      el.saveState.textContent = message || "—";
+      el.saveState.className = "save-state" + (type ? ` ${type}` : "");
+    }
+
+    function baseName(filename) {
+      const lastDot = filename.lastIndexOf(".");
+      return lastDot === -1 ? filename : filename.slice(0, lastDot);
+    }
+
+    function extension(filename) {
+      const lastDot = filename.lastIndexOf(".");
+      return lastDot === -1 ? "" : filename.slice(lastDot + 1).toLowerCase();
+    }
+
+    function naturalCompare(a, b) {
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+    }
+
+    async function ensurePermission(handle, write = false) {
+      const options = { mode: write ? "readwrite" : "read" };
+      if ((await handle.queryPermission(options)) === "granted") return true;
+      return (await handle.requestPermission(options)) === "granted";
+    }
+
+    async function openFolder() {
+      if (!("showDirectoryPicker" in window)) {
+        alert(t("browserUnsupported"));
+        return;
+      }
+
+      try {
+        const dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+        const allowed = await ensurePermission(dirHandle, true);
+        if (!allowed) {
+          alert(t("permissionRequired"));
+          return;
+        }
+
+        state.directoryHandle = dirHandle;
+        el.folderName.textContent = dirHandle.name;
+        await scanDirectory();
+      } catch (err) {
+        if (err?.name !== "AbortError") {
+          console.error(err);
+          alert(t("openFolderError"));
+        }
+      }
+    }
+
+    async function scanDirectory() {
+      const images = [];
+      const textFiles = new Map();
+
+      for await (const [name, handle] of state.directoryHandle.entries()) {
+        if (handle.kind !== "file") continue;
+
+        const ext = extension(name);
+        if (IMAGE_EXTENSIONS.includes(ext)) {
+          images.push({ name, handle });
+        } else if (ext === "txt") {
+          textFiles.set(baseName(name).toLowerCase(), handle);
+        }
+      }
+
+      images.sort((a, b) => naturalCompare(a.name, b.name));
+
+      state.items = images.map(image => {
+        const key = baseName(image.name).toLowerCase();
+        return {
+          imageName: image.name,
+          imageHandle: image.handle,
+          textName: `${baseName(image.name)}.txt`,
+          textHandle: textFiles.get(key) || null
+        };
+      });
+
+      el.totalCount.textContent = state.items.length;
+
+      if (state.items.length === 0) {
+        clearViewer(t("noCompatibleImages"));
+        return;
+      }
+
+      await loadItem(0);
+    }
+
+    function clearViewer(message) {
+      if (state.imageObjectUrl) {
+        URL.revokeObjectURL(state.imageObjectUrl);
+        state.imageObjectUrl = null;
+      }
+
+      state.currentIndex = -1;
+      state.currentTextHandle = null;
+      state.dirty = false;
+
+      el.previewImage.hidden = true;
+      el.previewImage.removeAttribute("src");
+      el.imageEmpty.hidden = false;
+      el.imageEmpty.textContent = message;
+      el.captionText.value = "";
+      el.captionText.disabled = true;
+      el.currentFileName.textContent = t("noTxtOpen");
+      el.positionCount.textContent = `0 / ${state.items.length}`;
+      el.pairInfo.textContent = t("noFileLoaded");
+      el.prevBtn.disabled = true;
+      el.nextBtn.disabled = true;
+      el.saveBtn.disabled = true;
+      setSaveState();
+    }
+
+    async function maybeSaveBeforeNavigation() {
+      if (!state.dirty) return true;
+      return confirm(t("unsavedConfirm"));
+    }
+
+    async function loadItem(index) {
+      if (index < 0 || index >= state.items.length) return;
+
+      const item = state.items[index];
+      state.currentIndex = index;
+      state.currentTextHandle = item.textHandle;
+      state.dirty = false;
+
+      if (state.imageObjectUrl) URL.revokeObjectURL(state.imageObjectUrl);
+
+      const imageFile = await item.imageHandle.getFile();
+      state.imageObjectUrl = URL.createObjectURL(imageFile);
+      el.previewImage.src = state.imageObjectUrl;
+      el.previewImage.hidden = false;
+      el.imageEmpty.hidden = true;
+
+      let text = "";
+      let txtExists = Boolean(item.textHandle);
+
+      if (item.textHandle) {
+        const textFile = await item.textHandle.getFile();
+        text = await textFile.text();
+      }
+
+      el.captionText.disabled = false;
+      el.captionText.value = text;
+      el.currentFileName.textContent = txtExists
+        ? `${item.imageName}  ↔  ${item.textName}`
+        : `${item.imageName}  ↔  ${item.textName} (${t("willCreateOnSave")})`;
+
+      el.positionCount.textContent = `${index + 1} / ${state.items.length}`;
+      el.pairInfo.textContent = txtExists ? t("pairFound") : t("imageOnly");
+      el.prevBtn.disabled = index === 0;
+      el.nextBtn.disabled = index === state.items.length - 1;
+      el.saveBtn.disabled = false;
+      setSaveState(txtExists ? t("loaded") : t("newTxt"), txtExists ? "" : "unsaved");
+
+      el.captionText.focus();
+      el.captionText.setSelectionRange(0, 0);
+    }
+
+    async function saveCurrent() {
+      if (state.currentIndex < 0 || !state.directoryHandle) return;
+
+      try {
+        const allowed = await ensurePermission(state.directoryHandle, true);
+        if (!allowed) {
+          setSaveState(t("noSavePermission"), "error");
+          return;
+        }
+
+        const item = state.items[state.currentIndex];
+        let handle = item.textHandle;
+
+        if (!handle) {
+          handle = await state.directoryHandle.getFileHandle(item.textName, { create: true });
+          item.textHandle = handle;
+          state.currentTextHandle = handle;
+        }
+
+        const writable = await handle.createWritable();
+        await writable.write(el.captionText.value);
+        await writable.close();
+
+        state.dirty = false;
+        el.currentFileName.textContent = `${item.imageName}  ↔  ${item.textName}`;
+        el.pairInfo.textContent = t("pairFound");
+        setSaveState(t("saved"), "saved");
+      } catch (err) {
+        console.error(err);
+        setSaveState(t("saveError"), "error");
+        alert(t("saveErrorAlert"));
+      }
+    }
+
+    async function navigate(step) {
+      if (state.currentIndex < 0) return;
+      const canLeave = await maybeSaveBeforeNavigation();
+      if (!canLeave) return;
+      await loadItem(state.currentIndex + step);
+    }
+
+    el.openFolderBtn.addEventListener("click", openFolder);
+    el.prevBtn.addEventListener("click", () => navigate(-1));
+    el.nextBtn.addEventListener("click", () => navigate(1));
+    el.saveBtn.addEventListener("click", saveCurrent);
+    el.languageBtn.addEventListener("click", toggleLanguage);
+
+    el.captionText.addEventListener("input", () => {
+      if (state.currentIndex < 0) return;
+      state.dirty = true;
+      setSaveState(t("unsaved"), "unsaved");
+    });
+
+    document.addEventListener("keydown", async (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        await saveCurrent();
+        return;
+      }
+
+      if (event.altKey && event.key === "ArrowLeft") {
+        event.preventDefault();
+        await navigate(-1);
+      }
+
+      if (event.altKey && event.key === "ArrowRight") {
+        event.preventDefault();
+        await navigate(1);
+      }
+    });
+
+    window.addEventListener("beforeunload", (event) => {
+      if (!state.dirty) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
+
+    refreshLanguage();
+  </script>
+</body>
+</html>
