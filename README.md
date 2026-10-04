@@ -17,7 +17,7 @@ No installation, backend, database, or server is required.
 Simply open the HTML file in a supported browser and start working.
 
 ## Features
-**Side-by-side image and caption editor**
+### Side-by-side image and caption editor
 - The interface is divided vertically into two equal sections:
   - Left side: Image preview
   - Right side: Editable caption text
