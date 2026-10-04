@@ -23,7 +23,7 @@ Simply open the HTML file in a supported browser and start working.
   - Right side: Editable caption text
 This makes it easy to see the image while writing or reviewing its caption.
 
-**Folder selection**
+### Folder selection
 Click "Open Files" and select the folder containing your dataset.
 
 Caption Editor automatically scans the selected directory and loads the supported images.
@@ -39,7 +39,7 @@ Example directory:
 └── IMG (4).jpg
 ```
 
-**Automatic image and caption matching**
+### Automatic image and caption matching
 Images are automatically matched with .txt files that have the same filename.
 
 For example:
@@ -50,7 +50,7 @@ IMG (1).txt
 
 The image will be displayed on the left while the corresponding text file is loaded into the editor on the right.
 
-**Automatic caption file creation**
+### Automatic caption file creation
 If an image does not already have a corresponding .txt file, you can still write a caption normally.
 
 For example:
@@ -63,19 +63,19 @@ IMG (15).txt
 ```
 Does not exist, Caption Editor will create it automatically when you click Save.
 
-**Direct file saving**
+### Direct file saving
 Edited captions are saved directly back to their corresponding .txt files inside the selected folder.
 
 There is no need to download or export captions manually.
 
-**Image navigation**
+### Image navigation
 Use the navigation controls to move through your dataset:
 - Previous
 - Next
 
 The application processes the images one at a time, making it suitable for reviewing large caption datasets.
 
-**Image counter**
+### Image counter
 Below the main toolbar, Caption Editor displays the current position inside the dataset.
 
 Example:
@@ -87,7 +87,7 @@ This allows you to quickly see:
 - The total number of images loaded
 - Your current position in the dataset
 
-**Caption status**
+### Caption status
 The interface displays the current state of the caption.
 
 Depending on the situation, it can indicate whether:
@@ -96,20 +96,19 @@ Depending on the situation, it can indicate whether:
 - The current caption has been saved
 - There are unsaved changes
 
-**Unsaved changes protection**
+### Unsaved changes protection
 If you modify a caption and attempt to move to another image before saving, Caption Editor warns you about the unsaved changes.
 
 This helps prevent accidental loss of caption edits.
 
-**Image preview**
+### Image preview
 Images are displayed inside a square 1:1 preview area.
 
 The original image aspect ratio is preserved.
 
 Smaller images are not unnecessarily stretched, while larger images are automatically scaled to fit the available preview area.
 
-**Supported image formats**
-
+### Supported image formats
 Caption Editor currently supports:
 ```
 .jpg
@@ -121,7 +120,7 @@ Caption Editor currently supports:
 .avif
 ```
 
-**Natural filename sorting**
+### Natural filename sorting
 Images are sorted naturally.
 
 For example:
@@ -142,7 +141,7 @@ IMG (3)
 
 This is especially useful for datasets containing numbered filenames.
 
-**Keyboard shortcuts**
+### Keyboard shortcuts
 Caption Editor includes a few shortcuts to speed up the captioning workflow.
 
 | Shortcut | Action |
@@ -151,7 +150,7 @@ Caption Editor includes a few shortcuts to speed up the captioning workflow.
 | Alt + Left Arrow | Previous image |
 | Alt + Right Arrow | Next image |
 
-**Language selection**
+### Language selection
 The interface supports:
 - English
 - Portuguese — Brazil
@@ -162,7 +161,7 @@ English is the default language when Caption Editor is opened.
 
 The language selector only affects the application interface. Your caption text is never translated or modified.
 
-**No installation required**
+### No installation required
 Caption Editor is contained in a single HTML file.
 
 You do not need:
@@ -178,7 +177,7 @@ Any additional dependencies
 
 Just open the HTML file in your browser.
 
-**Browser compatibility**
+### Browser compatibility
 Caption Editor uses the browser's File System Access API in order to read and modify files directly inside the selected folder.
 
 For the best compatibility, use a Chromium-based browser such as:
