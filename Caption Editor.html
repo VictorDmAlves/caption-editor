@@ -22,6 +22,9 @@
 
     * { box-sizing: border-box; }
 
+    /* Robust visibility helper. Author CSS must never override privacy state. */
+    .is-hidden { display: none !important; }
+
     html, body {
       margin: 0;
       width: 100%;
@@ -80,6 +83,54 @@
     }
 
     .topbar .spacer { flex: 1; }
+
+    .icon-button {
+      width: 38px;
+      height: 36px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-button svg {
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+
+    .privacy-toggle.active {
+      background: #3a2528;
+      border-color: #7b3d43;
+      color: #ffb1b8;
+      box-shadow: inset 0 0 0 1px rgba(255, 107, 107, .08);
+    }
+
+    .privacy-toggle {
+      position: relative;
+    }
+
+    .privacy-toggle.active:hover:not(:disabled) {
+      background: #472b2f;
+      border-color: #915057;
+    }
+
+    .privacy-toggle.active::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ff6b6b;
+      box-shadow: 0 0 0 2px rgba(16, 18, 20, .9);
+    }
 
     .folder-name {
       color: var(--muted);
@@ -168,6 +219,44 @@
       display: block;
     }
 
+    .privacy-screen {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 30px;
+      text-align: center;
+      color: var(--muted);
+      background:
+        radial-gradient(circle at center, rgba(77, 141, 255, .07), transparent 45%),
+        #0c0e10;
+    }
+
+    .privacy-screen svg {
+      width: 42px;
+      height: 42px;
+      fill: none;
+      stroke: #b0bac5;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: .9;
+    }
+
+    .privacy-screen strong {
+      color: #dfe5ec;
+      font-size: 15px;
+    }
+
+    .privacy-screen span {
+      max-width: 320px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
     .empty {
       text-align: center;
       color: var(--muted);
@@ -229,6 +318,18 @@
     <button id="nextBtn" disabled>Next</button>
     <button id="saveBtn" disabled>Save</button>
     <button id="languageBtn" title="Switch to Portuguese (BR)" aria-label="Switch language">EN</button>
+    <button id="imageVisibilityBtn" class="icon-button privacy-toggle" title="Hide images" aria-label="Hide images" aria-pressed="false">
+      <svg id="eyeVisibleIcon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+        <circle cx="12" cy="12" r="2.7"></circle>
+      </svg>
+      <svg id="eyeHiddenIcon" class="is-hidden" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 3l18 18"></path>
+        <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.7 3.3"></path>
+        <path d="M6.6 6.7C3.9 8.6 2.5 12 2.5 12s3.5 6 9.5 6c1.7 0 3.2-.5 4.5-1.2"></path>
+        <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path>
+      </svg>
+    </button>
     <div class="spacer"></div>
     <div id="folderName" class="folder-name">No folder opened</div>
   </header>
@@ -243,9 +344,19 @@
   <main class="workspace">
     <section class="panel image-panel">
       <div class="image-stage">
-        <img id="previewImage" alt="Current image" hidden />
+        <img id="previewImage" class="is-hidden" alt="Current image" />
         <div id="imageEmpty" class="empty">
           Click <strong>Open files</strong> and select the folder containing the images and their corresponding TXT files.
+        </div>
+        <div id="privacyScreen" class="privacy-screen is-hidden">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 3l18 18"></path>
+            <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.7 3.3"></path>
+            <path d="M6.6 6.7C3.9 8.6 2.5 12 2.5 12s3.5 6 9.5 6c1.7 0 3.2-.5 4.5-1.2"></path>
+            <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path>
+          </svg>
+          <strong id="privacyTitle">Images hidden</strong>
+          <span id="privacyDescription">Image preview is disabled for this session. Click the eye button to show it again.</span>
         </div>
       </div>
     </section>
@@ -266,7 +377,8 @@
       currentTextHandle: null,
       imageObjectUrl: null,
       dirty: false,
-      language: "en"
+      language: "en",
+      imagesVisible: true
     };
 
     const translations = {
@@ -300,7 +412,11 @@
         saveErrorAlert: "The TXT file could not be saved. Check the browser console for more details.",
         unsaved: "Unsaved changes",
         languageButton: "EN",
-        languageTitle: "Switch to Portuguese (BR)"
+        languageTitle: "Switch to Portuguese (BR)",
+        hideImages: "Hide images",
+        showImages: "Show images",
+        imagesHiddenTitle: "Images hidden",
+        imagesHiddenDescription: "Image preview is disabled for this session. Click the eye button to show it again."
       },
       br: {
         pageTitle: "Editor de Caption de Imagens",
@@ -332,7 +448,11 @@
         saveErrorAlert: "Não foi possível salvar o TXT. Veja o console do navegador para mais detalhes.",
         unsaved: "Alterações não salvas",
         languageButton: "BR",
-        languageTitle: "Switch to English"
+        languageTitle: "Switch to English",
+        hideImages: "Ocultar imagens",
+        showImages: "Exibir imagens",
+        imagesHiddenTitle: "Imagens ocultas",
+        imagesHiddenDescription: "A visualização das imagens está desativada nesta sessão. Clique no botão de olho para exibir novamente."
       }
     };
 
@@ -346,6 +466,9 @@
       nextBtn: document.getElementById("nextBtn"),
       saveBtn: document.getElementById("saveBtn"),
       languageBtn: document.getElementById("languageBtn"),
+      imageVisibilityBtn: document.getElementById("imageVisibilityBtn"),
+      eyeVisibleIcon: document.getElementById("eyeVisibleIcon"),
+      eyeHiddenIcon: document.getElementById("eyeHiddenIcon"),
       folderName: document.getElementById("folderName"),
       imagesLabel: document.getElementById("imagesLabel"),
       positionLabel: document.getElementById("positionLabel"),
@@ -355,6 +478,9 @@
       saveState: document.getElementById("saveState"),
       previewImage: document.getElementById("previewImage"),
       imageEmpty: document.getElementById("imageEmpty"),
+      privacyScreen: document.getElementById("privacyScreen"),
+      privacyTitle: document.getElementById("privacyTitle"),
+      privacyDescription: document.getElementById("privacyDescription"),
       currentFileName: document.getElementById("currentFileName"),
       captionText: document.getElementById("captionText")
     };
@@ -372,6 +498,9 @@
       el.positionLabel.textContent = t("position");
       el.previewImage.alt = t("currentImageAlt");
       el.captionText.placeholder = t("placeholder");
+      el.privacyTitle.textContent = t("imagesHiddenTitle");
+      el.privacyDescription.textContent = t("imagesHiddenDescription");
+      refreshImageVisibility();
 
       if (!state.directoryHandle) {
         el.folderName.textContent = t("noFolder");
@@ -402,6 +531,41 @@
     function toggleLanguage() {
       state.language = state.language === "en" ? "br" : "en";
       refreshLanguage();
+    }
+
+    function refreshImageVisibility() {
+      const privacyEnabled = !state.imagesVisible;
+
+      // Button state: only one eye icon can ever be visible.
+      el.imageVisibilityBtn.classList.toggle("active", privacyEnabled);
+      el.imageVisibilityBtn.setAttribute("aria-pressed", privacyEnabled ? "true" : "false");
+      el.imageVisibilityBtn.title = privacyEnabled ? t("showImages") : t("hideImages");
+      el.imageVisibilityBtn.setAttribute("aria-label", privacyEnabled ? t("showImages") : t("hideImages"));
+      el.eyeVisibleIcon.classList.toggle("is-hidden", privacyEnabled);
+      el.eyeHiddenIcon.classList.toggle("is-hidden", !privacyEnabled);
+
+      // Privacy mode completely replaces the image/empty state in the preview.
+      if (privacyEnabled) {
+        el.previewImage.classList.add("is-hidden");
+        el.imageEmpty.classList.add("is-hidden");
+        el.privacyScreen.classList.remove("is-hidden");
+        return;
+      }
+
+      el.privacyScreen.classList.add("is-hidden");
+
+      if (state.currentIndex >= 0 && el.previewImage.src) {
+        el.previewImage.classList.remove("is-hidden");
+        el.imageEmpty.classList.add("is-hidden");
+      } else {
+        el.previewImage.classList.add("is-hidden");
+        el.imageEmpty.classList.remove("is-hidden");
+      }
+    }
+
+    function toggleImageVisibility() {
+      state.imagesVisible = !state.imagesVisible;
+      refreshImageVisibility();
     }
 
     function setSaveState(message = "", type = "") {
@@ -501,10 +665,10 @@
       state.currentTextHandle = null;
       state.dirty = false;
 
-      el.previewImage.hidden = true;
+      el.previewImage.classList.add("is-hidden");
       el.previewImage.removeAttribute("src");
-      el.imageEmpty.hidden = false;
       el.imageEmpty.textContent = message;
+      refreshImageVisibility();
       el.captionText.value = "";
       el.captionText.disabled = true;
       el.currentFileName.textContent = t("noTxtOpen");
@@ -534,8 +698,7 @@
       const imageFile = await item.imageHandle.getFile();
       state.imageObjectUrl = URL.createObjectURL(imageFile);
       el.previewImage.src = state.imageObjectUrl;
-      el.previewImage.hidden = false;
-      el.imageEmpty.hidden = true;
+      refreshImageVisibility();
 
       let text = "";
       let txtExists = Boolean(item.textHandle);
@@ -608,6 +771,7 @@
     el.nextBtn.addEventListener("click", () => navigate(1));
     el.saveBtn.addEventListener("click", saveCurrent);
     el.languageBtn.addEventListener("click", toggleLanguage);
+    el.imageVisibilityBtn.addEventListener("click", toggleImageVisibility);
 
     el.captionText.addEventListener("input", () => {
       if (state.currentIndex < 0) return;

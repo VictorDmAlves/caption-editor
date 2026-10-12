@@ -16,6 +16,28 @@ No installation, backend, database, or server is required.
 
 Simply open the HTML file in a supported browser and start working.
 
+## Releases
+### 1.0:
+- Side-by-side image and caption editor
+- Local folder access through the browser
+- Automatic image and `.txt` caption matching
+- Automatic creation of missing caption files
+- Direct caption saving
+- Previous and Next navigation
+- Image counter and caption status
+- Unsaved changes protection
+- 1:1 image preview
+- Natural filename sorting
+- Support for JPG, JPEG, PNG, WEBP, BMP, GIF and AVIF
+- Keyboard shortcuts
+- English and Brazilian Portuguese interface
+- Runs entirely in the browser with no installation required
+
+### 1.1:
+- New Image Privacy Mode
+- Added an eye button next to the language selector
+- Images can now be completely hidden from the preview area
+
 ## Features
 ### Side-by-side image and caption editor
 - The interface is divided vertically into two equal sections:
@@ -74,6 +96,21 @@ Use the navigation controls to move through your dataset:
 - Next
 
 The application processes the images one at a time, making it suitable for reviewing large caption datasets.
+
+### Image privacy mode
+Caption Editor includes an optional Image Privacy Mode for situations where you want to review or edit captions without keeping the image visible on screen.
+
+A dedicated eye button is available in the top toolbar, next to the language selector.
+
+When Image Privacy Mode is enabled:
+- The current image is completely hidden from the preview area
+- The image preview is replaced by a privacy message
+- The button changes to a crossed-out eye icon
+- The button receives a visual highlight to make it clear that privacy mode is active
+- Captions can still be edited and saved normally
+- Navigation with Previous and Next continues to work normally
+
+The privacy state remains active while navigating through the dataset.
 
 ### Image counter
 Below the main toolbar, Caption Editor displays the current position inside the dataset.
