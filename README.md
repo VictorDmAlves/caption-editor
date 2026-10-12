@@ -16,27 +16,19 @@ No installation, backend, database, or server is required.
 
 Simply open the HTML file in a supported browser and start working.
 
-## Releases
-### 1.0:
-- Side-by-side image and caption editor
-- Local folder access through the browser
-- Automatic image and `.txt` caption matching
-- Automatic creation of missing caption files
-- Direct caption saving
-- Previous and Next navigation
-- Image counter and caption status
-- Unsaved changes protection
-- 1:1 image preview
-- Natural filename sorting
-- Support for JPG, JPEG, PNG, WEBP, BMP, GIF and AVIF
-- Keyboard shortcuts
-- English and Brazilian Portuguese interface
-- Runs entirely in the browser with no installation required
-
-### 1.1:
+## Latest release
+### 1.1
+Added
 - New Image Privacy Mode
 - Added an eye button next to the language selector
 - Images can now be completely hidden from the preview area
+- Privacy mode remains active while navigating between images
+- Clear visual indication when image hiding is enabled
+- Images are visible by default when the application starts
+
+Fixed
+- Corrected the image hiding behavior so the preview is fully removed
+- Fixed the visibility state of the eye icons so only the correct icon is shown at a time
 
 ## Features
 ### Side-by-side image and caption editor
